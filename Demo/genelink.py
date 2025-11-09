@@ -181,10 +181,10 @@ for epoch in range(args.epochs):
             'AUC:{:.3F}'.format(AUC),
             'AUPR:{:.3F}'.format(AUPR))
 stop_time = time.time()
-print(f"运行总时间为{stop_time - start_time}秒")
-torch.save(model.state_dict(), model_path + data_type+' '+str(num)+'.pkl')
 
-model.load_state_dict(torch.load(model_path + data_type+' '+str(num)+'.pkl'))
+# torch.save(model.state_dict(), model_path + data_type+' '+str(num)+'.pkl')
+#
+# model.load_state_dict(torch.load(model_path + data_type+' '+str(num)+'.pkl'))
 model.eval()
 tf_embed, target_embed = model.get_embedding()
 embed2file(tf_embed,target_embed,target_file,tf_embed_path,target_embed_path)
@@ -198,7 +198,8 @@ else:
 
 
 AUC, AUPR, AUPR_norm = Evaluation(y_pred=score, y_true=test_data[:, -1],flag=args.flag)
-
+print(f"调控网络节点的个数为: {adj.shape[1]}")
+print(f"运行总时间为{stop_time - start_time}秒")
 print('构建网络精度为 AUC:{}'.format(AUC),
      'AUPRC:{}'.format(AUPR))
 
