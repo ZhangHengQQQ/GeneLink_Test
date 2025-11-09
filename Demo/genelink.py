@@ -19,7 +19,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--lr', type=float, default=3e-3, help='Initial learning rate.')
-parser.add_argument('--epochs', type=int, default= 90, help='Number of epoch.')
+parser.add_argument('--epochs', type=int, default= 100, help='Number of epoch.')
 parser.add_argument('--num_head', type=list, default=[3,3], help='Number of head attentions.')
 parser.add_argument('--alpha', type=float, default=0.2, help='Alpha for the leaky_relu.')
 parser.add_argument('--hidden_dim', type=int, default=[128,64,32], help='The dimension of hidden layer')
@@ -30,6 +30,8 @@ parser.add_argument('--seed', type=int, default=8, help='Random seed')
 parser.add_argument('--Type',type=str,default='dot', help='score metric')
 parser.add_argument('--flag', type=bool, default=False, help='the identifier whether to conduct causal inference')
 parser.add_argument('--reduction',type=str,default='concate', help='how to integrate multihead attention')
+parser.add_argument('--data_type',type=str,default='hESC', help='choose dataset hESC or Dataset mESC')
+
 
 args = parser.parse_args()
 seed = args.seed
@@ -42,8 +44,8 @@ np.random.seed(args.seed)
 Non-Specific
 mHSC-L learning rate = 3e-5
 """
-data_type = 'mESC'
-num = 500
+data_type = args.data_type
+num = 1000
 
 
 def embed2file(tf_embed,tg_embed,gene_file,tf_path,target_path):
@@ -60,10 +62,10 @@ def embed2file(tf_embed,tg_embed,gene_file,tf_path,target_path):
 
 
 
-density = Network_Statistic(data_type,num,net_type)
-exp_file = '.../Demo/'+data_type+'/TFs+'+str(num)+'/BL--ExpressionData.csv'
-tf_file = '.../Demo/'+data_type+'/TFs+'+str(num)+'/TF.csv'
-target_file = '.../Demo/'+data_type+'/TFs+'+str(num)+'/Target.csv'
+# density = Network_Statistic(data_type,num,net_type)
+exp_file = data_type+'/TFs+'+str(num)+'/BL--ExpressionData.csv'
+tf_file = data_type+'/TFs+'+str(num)+'/TF.csv'
+target_file = data_type+'/TFs+'+str(num)+'/Target.csv'
 
 data_input = pd.read_csv(exp_file,index_col=0)
 loader = load_data(data_input)
@@ -77,9 +79,9 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 data_feature = feature.to(device)
 tf = tf.to(device)
 
-train_file = '.../Demo/Train_validation_test/'+data_type+' '+str(num)+'/Train_set.csv'
-test_file = '.../Demo/Train_validation_test/'+data_type+' '+str(num)+'/Test_set.csv'
-val_file = '.../Demo/Train_validation_test/'+data_type+' '+str(num)+'/Validation_set.csv'
+train_file = 'Train_validation_test/'+data_type+' '+str(num)+'/Train_set.csv'
+test_file = 'Train_validation_test/'+data_type+' '+str(num)+'/Test_set.csv'
+val_file = 'Train_validation_test/'+data_type+' '+str(num)+'/Validation_set.csv'
 
 
 tf_embed_path = r'Result/'+data_type+' '+str(num)+'/Channel1.csv'
@@ -130,7 +132,7 @@ model_path = 'model/'
 if not os.path.exists(model_path):
     os.makedirs(model_path)
 
-
+start_time = time.time()
 
 for epoch in range(args.epochs):
     running_loss = 0.0
@@ -178,7 +180,8 @@ for epoch in range(args.epochs):
             'train loss:{}'.format(running_loss),
             'AUC:{:.3F}'.format(AUC),
             'AUPR:{:.3F}'.format(AUPR))
-
+stop_time = time.time()
+print(f"运行总时间为{stop_time - start_time}秒")
 torch.save(model.state_dict(), model_path + data_type+' '+str(num)+'.pkl')
 
 model.load_state_dict(torch.load(model_path + data_type+' '+str(num)+'.pkl'))
@@ -196,7 +199,7 @@ else:
 
 AUC, AUPR, AUPR_norm = Evaluation(y_pred=score, y_true=test_data[:, -1],flag=args.flag)
 
-print('AUC:{}'.format(AUC),
+print('构建网络精度为 AUC:{}'.format(AUC),
      'AUPRC:{}'.format(AUPR))
 
 
